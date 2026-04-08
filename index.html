@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>JJK Minecraft Mod — GUI Layout Builder</title>
+<title>JJK Minecraft Mod — GUI Layout Builder Professional</title>
+<meta name="description" content="Ferramenta profissional de criação de interfaces GUI para mods de Minecraft baseados em Jujutsu Kaisen" />
+<meta name="author" content="JJK Mod Team" />
+<meta name="keywords" content="minecraft, jujutsu kaisen, gui, hud, layout, builder, pixel art, gojo, sukuna" />
 
-<!-- Google Fonts: Pixel / Retro -->
+<!-- Google Fonts: Pixel / Retro + Fontes adicionais -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 
 <!-- html2canvas via CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -16,34 +19,138 @@
 <style>
 /* ============================================================
    VARIÁVEIS CSS (THEME SYSTEM)
-   — Edite aqui ou adicione novos temas via JS (veja ThemeEngine).
+   — Sistema completo de temas com suporte a múltiplas variáveis
+   — Para adicionar novo tema: crie objeto em ThemeEngine.themes no JS
+   — Todas as variáveis abaixo são atualizadas dinamicamente via JS
    ============================================================ */
 :root {
+  /* Cores Base do Tema */
   --bg-color:           #000000;
   --bg-secondary:       #0a0a0a;
   --bg-panel:           #111111;
+  --bg-panel-alt:       #1a1a1a;
   --text-color:         #FFFFFF;
   --text-muted:         #888888;
+  --text-disabled:      #444444;
+  
+  /* Cores de Destaque e Acento */
   --accent-color:       #00E5FF;
   --accent-dim:         #007a8a;
+  --accent-glow:        rgba(0, 229, 255, 0.3);
+  --accent-gradient:    linear-gradient(135deg, var(--accent-color), var(--accent-dim));
+  
+  /* Bordas e Estilos */
   --border-color:       #FFFFFF;
   --border-width:       2px;
+  --border-width-thick: 4px;
   --border-style:       solid;
+  --border-radius:      0px;
+  --border-radius-sm:   0px;
+  --border-radius-md:   0px;
+  --border-radius-lg:   0px;
+  
+  /* Tipografia */
   --font-heading:       'Press Start 2P', monospace;
   --font-body:          'VT323', monospace;
+  --font-tech:          'Share Tech Mono', monospace;
+  --font-display:       'Silkscreen', sans-serif;
+  --font-size-xs:       12px;
+  --font-size-sm:       14px;
+  --font-size-base:     16px;
+  --font-size-lg:       20px;
+  --font-size-xl:       24px;
+  --font-size-xxl:      32px;
+  
+  /* Canvas e Grid */
   --canvas-bg:          #0d0d0d;
+  --canvas-bg-alt:      #111111;
   --grid-color:         rgba(255, 255, 255, 0.06);
   --grid-color-snap:    rgba(0, 229, 255, 0.18);
+  --grid-size:          16px;
+  --grid-size-major:    64px;
+  
+  /* Seleção e Interação */
   --selection-outline:  #00E5FF;
+  --selection-bg:       rgba(0, 229, 255, 0.1);
   --resize-handle:      #00E5FF;
+  --resize-handle-hover:#00FFFF;
+  --drag-preview:       rgba(0, 229, 255, 0.2);
+  
+  /* Cores de Estado */
   --danger-color:       #FF3355;
+  --danger-hover:       #FF5577;
+  --warning-color:      #FFAA00;
+  --success-color:      #00FF88;
+  --info-color:         #00E5FF;
+  
+  /* Scrollbars */
   --scrollbar-bg:       #111;
   --scrollbar-thumb:    #333;
+  --scrollbar-thumb-hover: #444;
+  --scrollbar-width:    8px;
+  
+  /* Padrões e Texturas */
   --hatch-color:        rgba(255, 255, 255, 0.08);
-  /* Variáveis para Barras de Status / HUD */
-  --health-color:       #E53935;
-  --cursed-energy-color:#00E5FF;
-  --bar-bg-color:       #1A1A1A;
+  --hatch-color-alt:    rgba(0, 229, 255, 0.1);
+  --pattern-dot:        rgba(255, 255, 255, 0.05);
+  --pattern-line:       rgba(255, 255, 255, 0.08);
+  
+  /* Sombras e Efeitos */
+  --shadow-sm:          0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:          0 2px 8px rgba(0,0,0,0.6);
+  --shadow-lg:          0 4px 16px rgba(0,0,0,0.7);
+  --shadow-glow:        0 0 10px var(--accent-glow);
+  --shadow-inset:       inset 0 2px 4px rgba(0,0,0,0.5);
+  
+  /* Transições */
+  --transition-fast:    0.1s ease;
+  --transition-base:    0.15s ease;
+  --transition-slow:    0.3s ease;
+  
+  /* Z-Index Layers */
+  --z-background:       -1;
+  --z-canvas:           0;
+  --z-elements:         10;
+  --z-selection:        100;
+  --z-handles:          1000;
+  --z-overlay:          10000;
+  --z-toast:            10001;
+  --z-modal:            10002;
+  
+  /* ========================================
+     VARIÁVEIS PARA BARRAS DE STATUS / HUD
+     — Usadas por elementos ProgressBar
+     ======================================== */
+  --health-color:           #E53935;
+  --health-color-low:       #FF1100;
+  --health-color-mid:       #FF6600;
+  --health-color-high:      #00FF44;
+  --cursed-energy-color:    #00E5FF;
+  --cursed-energy-glow:     rgba(0, 229, 255, 0.5);
+  --bar-bg-color:           #1A1A1A;
+  --bar-border-color:       #FFFFFF;
+  --bar-text-color:         #FFFFFF;
+  --bar-shadow-color:       rgba(0, 0, 0, 0.5);
+  --bar-gradient-health:    linear-gradient(90deg, #FF1100, #E53935, #FF6600);
+  --bar-gradient-energy:    linear-gradient(90deg, #0099AA, #00E5FF, #00FFFF);
+  --bar-pattern:            repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.2) 8px, rgba(0,0,0,0.2) 16px);
+  
+  /* ========================================
+     VARIÁVEIS PARA NOVOS COMPONENTES HUD
+     — Icones, Slots, Buffs, Debuffs, etc.
+     ======================================== */
+  --slot-bg:                #1a1a1a;
+  --slot-border:            #444444;
+  --slot-border-active:     #00E5FF;
+  --slot-icon-size:         32px;
+  --buff-positive:          #00FF88;
+  --buff-negative:          #FF3355;
+  --buff-neutral:           #AAAAAA;
+  --cooldown-overlay:       rgba(0, 0, 0, 0.7);
+  --mana-crystal:           #9D4EDD;
+  --technique-glow:         #00E5FF;
+  --domain-expansion:       #FF00FF;
+  --curse-mark:             #8B0000;
 }
 
 /* ============================================================
