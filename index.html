@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JJK Minecraft Mod — GUI Layout Builder</title>
+
+<!-- Google Fonts: Pixel / Retro -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+<!-- html2canvas via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+/* ============================================================
+   VARIÁVEIS CSS (THEME SYSTEM)
+   — Edite aqui ou adicione novos temas via JS (veja ThemeEngine).
+   ============================================================ */
+:root {
+  --bg-color:           #000000;
+  --bg-secondary:       #0a0a0a;
+  --bg-panel:           #111111;
+  --text-color:         #FFFFFF;
+  --text-muted:         #888888;
+  --accent-color:       #00E5FF;
+  --accent-dim:         #007a8a;
+  --border-color:       #FFFFFF;
+  --border-width:       2px;
+  --border-style:       solid;
+  --font-heading:       'Press Start 2P', monospace;
+  --font-body:          'VT323', monospace;
+  --canvas-bg:          #0d0d0d;
+  --grid-color:         rgba(255, 255, 255, 0.06);
+  --grid-color-snap:    rgba(0, 229, 255, 0.18);
+  --selection-outline:  #00E5FF;
+  --resize-handle:      #00E5FF;
+  --danger-color:       #FF3355;
+  --scrollbar-bg:       #111;
+  --scrollbar-thumb:    #333;
+  --hatch-color:        rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  font-size: 18px;
+}
+
+/* Scrollbars customizadas */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+/* ============================================================
+   LAYOUT PRINCIPAL (3 colunas)
+   ============================================================ */
+#app {
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  gap: 0;
+}
+
+/* — Barra Superior — */
+#topbar {
+  grid-column: 1 / -1;
+  background: var(--bg-secondary);
+  border-bottom: var(--border-width) var(--border-style) var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+#topbar .logo {
+  color: var(--accent-color);
+  margin-right: 8px;
+}
+#topbar .separator {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+  opacity: 0.25;
+}
+
+/* — Painel Esquerdo — */
+#panel-left {
+  background: var(--bg-panel);
+  border-right: var(--border-width) var(--border-style) var(--border-color);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* — Canvas Area — */
+#panel-center {
+  background: var(--canvas-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  position: relative;
+}
+
+/* — Painel Direito — */
+#panel-right {
+  background: var(--bg-panel);
+  border-left: var(--border-width) var(--border-style) var(--border-color);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================
+   COMPONENTES DE UI REUTILIZÁVEIS
+   ============================================================ */
+h2.section-title {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--accent-dim);
+  margin-bottom: 4px;
+}
+
+label.field-label {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border: var(--border-width) var(--border-style) var(--border-color);
+  padding: 6px 8px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.15s;
+  border-radius: 0;
+  -webkit-appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-dim);
+}
+
+/* Botão Genérico */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--text-color);
+  border: var(--border-width) var(--border-style) var(--border-color);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  border-radius: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn:hover {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  border-color: var(--accent-color);
+}
+.btn:active { transform: scale(0.97); }
+.btn.danger { border-color: var(--danger-color); color: var(--danger-color); }
+.btn.danger:hover { background: var(--danger-color); color: #fff; }
+.btn.small { width: auto; padding: 5px 8px; font-size: 8px; }
+
+/* Row de botões lado a lado */
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-row .btn { flex: 1; }
+
+/* Dropdown de Tema */
+#theme-select {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* Toggle / Checkbox customizado */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 9px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.toggle-row input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: var(--border-width) var(--border-style) var(--border-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  position: relative;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+.toggle-row input[type="checkbox"]:checked {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+.toggle-row input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--bg-color);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Campos de propriedade (grid 2 colunas) */
+.prop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.prop-field { display: flex; flex-direction: column; }
+
+/* ============================================================
+   CANVAS (16:9 — 1280x720 base)
+   ============================================================ */
+#canvas-wrapper {
+  position: relative;
+  transform-origin: center center;
+  image-rendering: pixelated;
+}
+
+#canvas {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  background: var(--canvas-bg);
+  image-rendering: pixelated;
+  /* Grade de fundo */
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+#canvas.snap-active {
+  background-image:
+    linear-gradient(var(--grid-color-snap) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color-snap) 1px, transparent 1px);
+}
+
+/* ============================================================
+   ELEMENTOS DENTRO DO CANVAS
+   ============================================================ */
+.canvas-element {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+.canvas-element.selected {
+  outline: 2px solid var(--selection-outline);
+  outline-offset: -1px;
+}
+
+/* — Elemento: Painel Vazio — */
+.el-panel {
+  border: var(--border-width) var(--border-style) var(--border-color);
+  background: var(--bg-panel);
+}
+
+/* — Elemento: Caixa Hachurada — */
+.el-hatch {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--hatch-color),
+    var(--hatch-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  border: var(--border-width) var(--border-style) var(--accent-color);
+}
+
+/* — Elemento: Texto — */
+.el-text {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px;
+  font-family: var(--font-body);
+  font-size: 24px;
+  color: var(--text-color);
+  white-space: pre;
+  line-height: 1.2;
+}
+
+/* — Elemento: Placeholder Imagem / Mangá — */
+.el-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--accent-dim);
+  background: var(--bg-secondary);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  position: relative;
+}
+.el-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: grayscale(100%); /* Filtro Gojo */
+}
+.el-image .placeholder-label {
+  pointer-events: none;
+}
+
+/* ============================================================
+   RESIZE HANDLES
+   ============================================================ */
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--resize-handle);
+  z-index: 9999;
+}
+.resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+.resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+.resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+.resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+
+/* Esconde handles quando não selecionado */
+.canvas-element:not(.selected) .resize-handle { display: none; }
+
+/* ============================================================
+   CANVAS EMPTY STATE
+   ============================================================ */
+#canvas-empty-msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-heading);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  pointer-events: none;
+  line-height: 1.8;
+}
+
+/* ============================================================
+   ZOOM CONTROLS
+   ============================================================ */
+#zoom-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: var(--border-width) var(--border-style) var(--border-color);
+  padding: 6px 12px;
+  z-index: 100;
+}
+#zoom-controls span {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  color: var(--accent-color);
+  min-width: 50px;
+  text-align: center;
+}
+#zoom-controls .btn { width: auto; padding: 4px 10px; font-size: 12px; }
+
+/* ============================================================
+   HIDDEN FILE INPUT
+   ============================================================ */
+.hidden-input { display: none; }
+
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--accent-color);
+  color: var(--bg-color);
+  font-family: var(--font-heading);
+  font-size: 10px;
+  padding: 10px 18px;
+  border: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 10000;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   NO SELECTION MESSAGE (Painel Direito)
+   ============================================================ */
+#no-selection {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 32px 8px;
+  line-height: 1.8;
+}
+#props-panel.hidden { display: none; }
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <!-- ==========================================================
+       BARRA SUPERIOR
+       ========================================================== -->
+  <div id="topbar">
+    <span class="logo">◆</span>
+    <span>JJK GUI BUILDER</span>
+    <div class="separator"></div>
+    <span style="color: var(--text-muted); font-size: 9px;">MINECRAFT MOD — PIXEL PRECISE</span>
+    <div style="flex:1"></div>
+    <select id="theme-select" title="Selecionar Tema">
+      <option value="gojo">◆ GOJO SATORU</option>
+      <!-- 
+        ████████████████████████████████████████████████████
+        PARA ADICIONAR UM NOVO TEMA:
+        1. Adicione um <option value="NOME"> aqui no HTML.
+        2. Defina o objeto do tema em ThemeEngine.themes (no JS).
+        Exemplo: <option value="sukuna">◆ SUKUNA</option>
+        ████████████████████████████████████████████████████
+      -->
+    </select>
+  </div>
+
+  <!-- ==========================================================
+       PAINEL ESQUERDO — FERRAMENTAS E AÇÕES
+       ========================================================== -->
+  <div id="panel-left">
+
+    <div>
+      <h2 class="section-title">◆ Adicionar Elemento</h2>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <button class="btn" onclick="addElement('panel')">▢ Painel Vazio</button>
+        <button class="btn" onclick="addElement('hatch')">▥ Caixa Hachurada</button>
+        <button class="btn" onclick="addElement('text')">T Texto</button>
+        <button class="btn" onclick="addElement('image')">◫ Imagem / Mangá</button>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="section-title">◆ Ações do Projeto</h2>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <button class="btn" onclick="saveProject()">💾 Salvar (JSON)</button>
+        <button class="btn" onclick="triggerLoad()">📂 Carregar (JSON)</button>
+        <button class="btn" onclick="exportPNG()">🖼️ Exportar PNG</button>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="section-title">◆ Canvas</h2>
+      <div style="margin-top:8px;">
+        <label class="toggle-row">
+          <input type="checkbox" id="snap-toggle" checked onchange="toggleSnap()" />
+          Snap to Grid (16px)
+        </label>
+      </div>
+    </div>
+
+    <!-- Input oculto para carregar JSON -->
+    <input type="file" id="file-load-json" class="hidden-input" accept=".json" onchange="loadProject(event)" />
+  </div>
+
+  <!-- ==========================================================
+       PAINEL CENTRAL — CANVAS
+       ========================================================== -->
+  <div id="panel-center">
+    <div id="canvas-wrapper">
+      <div id="canvas">
+        <div id="canvas-empty-msg">
+          NENHUM ELEMENTO ADICIONADO<br/>
+          Use o painel esquerdo para começar
+        </div>
+      </div>
+    </div>
+
+    <!-- Controles de Zoom -->
+    <div id="zoom-controls">
+      <button class="btn small" onclick="zoomCanvas(-0.1)">−</button>
+      <span id="zoom-label">100%</span>
+      <button class="btn small" onclick="zoomCanvas(0.1)">+</button>
+      <button class="btn small" onclick="zoomCanvas(0, true)">↺</button>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       PAINEL DIREITO — PROPRIEDADES
+       ========================================================== -->
+  <div id="panel-right">
+    <div id="no-selection">
+      NENHUM ELEMENTO SELECIONADO<br/><br/>
+      Clique em um elemento no canvas para editar suas propriedades.
+    </div>
+
+    <div id="props-panel" class="hidden">
+      <h2 class="section-title" id="props-title">◆ Propriedades</h2>
+
+      <div class="prop-grid" style="margin-top:10px;">
+        <div class="prop-field">
+          <label class="field-label">X</label>
+          <input type="number" id="prop-x" onchange="updateProp('x')" />
+        </div>
+        <div class="prop-field">
+          <label class="field-label">Y</label>
+          <input type="number" id="prop-y" onchange="updateProp('y')" />
+        </div>
+        <div class="prop-field">
+          <label class="field-label">Largura (W)</label>
+          <input type="number" id="prop-w" onchange="updateProp('w')" />
+        </div>
+        <div class="prop-field">
+          <label class="field-label">Altura (H)</label>
+          <input type="number" id="prop-h" onchange="updateProp('h')" />
+        </div>
+        <div class="prop-field">
+          <label class="field-label">Z-Index</label>
+          <input type="number" id="prop-z" onchange="updateProp('z')" />
+        </div>
+        <div class="prop-field">
+          <label class="field-label">Opacidade (0-1)</label>
+          <input type="number" id="prop-opacity" step="0.1" min="0" max="1" onchange="updateProp('opacity')" />
+        </div>
+      </div>
+
+      <!-- Campo de Texto (apenas para el-text) -->
+      <div id="prop-text-group" style="margin-top:10px; display:none;">
+        <label class="field-label">Texto</label>
+        <textarea id="prop-text" rows="3" onchange="updateProp('text')"></textarea>
+      </div>
+
+      <!-- Upload de Imagem (apenas para el-image) -->
+      <div id="prop-image-group" style="margin-top:10px; display:none;">
+        <label class="field-label">Imagem (Upload Local)</label>
+        <input type="file" id="prop-image-upload" accept="image/*" onchange="updateImage(event)" />
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn danger" onclick="deleteSelected()">✕ Deletar Elemento</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
