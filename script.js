@@ -65,7 +65,11 @@ const ThemeEngine = {
         '--danger-color':     '#FF3355',
         '--scrollbar-bg':     '#111',
         '--scrollbar-thumb':  '#333',
-        '--hatch-color':      'rgba(255, 255, 255, 0.08)'
+        '--hatch-color':      'rgba(255, 255, 255, 0.08)',
+        // Variáveis para Barras de Status / HUD
+        '--health-color':     '#E53935',
+        '--cursed-energy-color': '#00E5FF',
+        '--bar-bg-color':     '#1A1A1A'
       },
       imageFilter: 'grayscale(100%)'
     }
@@ -175,7 +179,9 @@ function addElement(type) {
     panel:  { w: 256, h: 192, label: 'Painel' },
     hatch:  { w: 256, h: 192, label: 'Hachura' },
     text:   { w: 320, h: 48,  label: 'Texto', text: 'Seu Texto Aqui' },
-    image:  { w: 256, h: 256, label: 'Imagem' }
+    image:  { w: 256, h: 256, label: 'Imagem' },
+    barHealth: { w: 256, h: 32, label: 'Barra de Vida', barType: 'health', fill: 100 },
+    barEnergy: { w: 256, h: 32, label: 'Barra de Energia', barType: 'energy', fill: 100 }
   };
 
   const def = defaults[type] || defaults.panel;
@@ -189,7 +195,11 @@ function addElement(type) {
     z: AppState.elements.length + 1,
     opacity: 1,
     text: def.text || '',
-    imageData: null  // Base64 para imagens carregadas
+    imageData: null,  // Base64 para imagens carregadas
+    // Propriedades específicas para barras de progresso
+    barType: def.barType || null,
+    barFill: def.fill !== undefined ? def.fill : 100,
+    barDirection: 'horizontal'  // 'horizontal' ou 'vertical'
   };
 
   AppState.elements.push(el);
@@ -240,6 +250,19 @@ function renderElement(el) {
     div.appendChild(img);
   } else if (el.type === 'image') {
     div.innerHTML = '<span class="placeholder-label">◫ CLIQUE PARA<br/>ADICIONAR IMAGEM</span>';
+  } else if (el.type === 'barHealth' || el.type === 'barEnergy') {
+    // Estrutura da barra de progresso: container > bg + fill
+    const barColorVar = el.barType === 'health' ? '--health-color' : '--cursed-energy-color';
+    const barColor = getComputedStyle(document.documentElement).getPropertyValue(barColorVar).trim();
+    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bar-bg-color').trim();
+    
+    div.innerHTML = `
+      <div class="bar-container" style="width:100%;height:100%;background:${bgColor};position:relative;">
+        <div class="bar-fill" style="position:absolute;background:${barColor};"></div>
+      </div>
+    `;
+    // Aplica o preenchimento e direção
+    updateBarFill(div, el.barFill, el.barDirection);
   }
   // panel e hatch não precisam de conteúdo interno
 
@@ -318,6 +341,7 @@ function showPropsPanel(id) {
   // Mostrar/ocultar campos específicos
   const textGroup = document.getElementById('prop-text-group');
   const imageGroup = document.getElementById('prop-image-group');
+  const barGroup = document.getElementById('prop-bar-group');
 
   if (el.type === 'text') {
     textGroup.style.display = 'block';
@@ -330,6 +354,16 @@ function showPropsPanel(id) {
     imageGroup.style.display = 'block';
   } else {
     imageGroup.style.display = 'none';
+  }
+
+  // Campos específicos para barras de progresso
+  if (el.type === 'barHealth' || el.type === 'barEnergy') {
+    barGroup.style.display = 'block';
+    document.getElementById('prop-bar-fill').value = el.barFill;
+    document.getElementById('prop-bar-fill-label').textContent = `${el.barFill}%`;
+    document.getElementById('prop-bar-direction').value = el.barDirection;
+  } else {
+    barGroup.style.display = 'none';
   }
 }
 
@@ -372,6 +406,19 @@ function updateProp(field) {
       el.text = document.getElementById('prop-text').value;
       if (div && el.type === 'text') div.textContent = el.text;
       break;
+    case 'barFill':
+      el.barFill = parseInt(document.getElementById('prop-bar-fill').value) || 0;
+      document.getElementById('prop-bar-fill-label').textContent = `${el.barFill}%`;
+      if (div && (el.type === 'barHealth' || el.type === 'barEnergy')) {
+        updateBarFill(div, el.barFill, el.barDirection);
+      }
+      break;
+    case 'barDirection':
+      el.barDirection = document.getElementById('prop-bar-direction').value;
+      if (div && (el.type === 'barHealth' || el.type === 'barEnergy')) {
+        updateBarFill(div, el.barFill, el.barDirection);
+      }
+      break;
   }
 }
 
@@ -403,6 +450,35 @@ function updateImage(event) {
   };
   reader.readAsDataURL(file);
 }
+
+/* ============================================================
+   UPDATE BAR FILL — Atualiza preenchimento da barra de progresso
+   ============================================================ */
+function updateBarFill(div, fillPercent, direction) {
+  const barFillEl = div.querySelector('.bar-fill');
+  if (!barFillEl) return;
+
+  const clampedFill = Math.max(0, Math.min(100, fillPercent));
+
+  if (direction === 'vertical') {
+    // Vertical: preenche de baixo para cima usando height
+    barFillEl.style.width = '100%';
+    barFillEl.style.height = `${clampedFill}%`;
+    barFillEl.style.bottom = '0';
+    barFillEl.style.left = '0';
+    barFillEl.style.right = 'auto';
+    barFillEl.style.top = 'auto';
+  } else {
+    // Horizontal: preenche da esquerda para direita usando width
+    barFillEl.style.height = '100%';
+    barFillEl.style.width = `${clampedFill}%`;
+    barFillEl.style.left = '0';
+    barFillEl.style.top = '0';
+    barFillEl.style.right = 'auto';
+    barFillEl.style.bottom = 'auto';
+  }
+}
+
 
 /* ============================================================
    DRAG — Arrastar elementos

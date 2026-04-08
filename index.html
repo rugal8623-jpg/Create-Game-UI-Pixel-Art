@@ -40,6 +40,10 @@
   --scrollbar-bg:       #111;
   --scrollbar-thumb:    #333;
   --hatch-color:        rgba(255, 255, 255, 0.08);
+  /* Variáveis para Barras de Status / HUD */
+  --health-color:       #E53935;
+  --cursed-energy-color:#00E5FF;
+  --bar-bg-color:       #1A1A1A;
 }
 
 /* ============================================================
@@ -362,6 +366,21 @@ input:focus, select:focus, textarea:focus {
   pointer-events: none;
 }
 
+/* — Elemento: Barra de Progresso (Vida / Energia) — */
+.el-barHealth,
+.el-barEnergy {
+  border: var(--border-width) var(--border-style) var(--border-color);
+  overflow: hidden;
+}
+.el-barHealth .bar-container,
+.el-barEnergy .bar-container {
+  image-rendering: pixelated;
+}
+.el-barHealth .bar-fill,
+.el-barEnergy .bar-fill {
+  image-rendering: pixelated;
+}
+
 /* ============================================================
    RESIZE HANDLES
    ============================================================ */
@@ -506,6 +525,14 @@ input:focus, select:focus, textarea:focus {
     </div>
 
     <div>
+      <h2 class="section-title">◆ Status / HUD</h2>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <button class="btn" onclick="addElement('barHealth')">❤ Barra de Vida</button>
+        <button class="btn" onclick="addElement('barEnergy')">⚡ Barra de Energia</button>
+      </div>
+    </div>
+
+    <div>
       <h2 class="section-title">◆ Ações do Projeto</h2>
       <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
         <button class="btn" onclick="saveProject()">💾 Salvar (JSON)</button>
@@ -599,6 +626,18 @@ input:focus, select:focus, textarea:focus {
       <div id="prop-image-group" style="margin-top:10px; display:none;">
         <label class="field-label">Imagem (Upload Local)</label>
         <input type="file" id="prop-image-upload" accept="image/*" onchange="updateImage(event)" />
+      </div>
+
+      <!-- Controles de Barra de Progresso (apenas para barras) -->
+      <div id="prop-bar-group" style="margin-top:10px; display:none;">
+        <label class="field-label">Preenchimento (<span id="prop-bar-fill-label">100%</span>)</label>
+        <input type="range" id="prop-bar-fill" min="0" max="100" value="100" onchange="updateProp('barFill')" oninput="document.getElementById('prop-bar-fill-label').textContent = this.value + '%'" style="width:100%;" />
+        
+        <label class="field-label" style="margin-top:12px;">Direção da Barra</label>
+        <select id="prop-bar-direction" onchange="updateProp('barDirection')">
+          <option value="horizontal">↔ Horizontal</option>
+          <option value="vertical">↕ Vertical</option>
+        </select>
       </div>
 
       <div style="margin-top:16px;">
